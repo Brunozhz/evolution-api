@@ -127,3 +127,12 @@ export class BlockUserDto {
   number: string;
   status: 'block' | 'unblock';
 }
+
+export class DecryptPollVoteDto {
+  pollCreationMessageKey: {
+    id: string;
+    remoteJid: string;
+    participant?: string;
+    fromMe?: boolean;
+  };
+}

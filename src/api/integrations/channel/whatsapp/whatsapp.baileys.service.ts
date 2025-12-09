@@ -5119,4 +5119,247 @@ export class BaileysStartupService extends ChannelStartupService {
       },
     };
   }
+
+  public async baileysDecryptPollVote(pollCreationMessageKey: proto.IMessageKey) {
+    try {
+      this.logger.verbose('Starting poll vote decryption process');
+
+      // Buscar a mensagem de criação da enquete
+      const pollCreationMessage = (await this.getMessage(pollCreationMessageKey, true)) as proto.IWebMessageInfo;
+
+      if (!pollCreationMessage) {
+        throw new NotFoundException('Poll creation message not found');
+      }
+
+      // Extrair opções da enquete
+      const pollOptions =
+        (pollCreationMessage.message as any)?.pollCreationMessage?.options ||
+        (pollCreationMessage.message as any)?.pollCreationMessageV3?.options ||
+        [];
+
+      if (!pollOptions || pollOptions.length === 0) {
+        throw new NotFoundException('Poll options not found');
+      }
+
+      // Recuperar chave de criptografia
+      const pollMessageSecret = (await this.getMessage(pollCreationMessageKey)) as any;
+      let pollEncKey = pollMessageSecret?.messageContextInfo?.messageSecret;
+
+      if (!pollEncKey) {
+        throw new NotFoundException('Poll encryption key not found');
+      }
+
+      // Normalizar chave de criptografia
+      if (typeof pollEncKey === 'string') {
+        pollEncKey = Buffer.from(pollEncKey, 'base64');
+      } else if (pollEncKey?.type === 'Buffer' && Array.isArray(pollEncKey.data)) {
+        pollEncKey = Buffer.from(pollEncKey.data);
+      }
+
+      if (Buffer.isBuffer(pollEncKey) && pollEncKey.length === 44) {
+        pollEncKey = Buffer.from(pollEncKey.toString('utf8'), 'base64');
+      }
+
+      // Buscar todas as mensagens de atualização de votos
+      const allPollUpdateMessages = await this.prismaRepository.message.findMany({
+        where: {
+          instanceId: this.instanceId,
+          messageType: 'pollUpdateMessage',
+        },
+        select: {
+          id: true,
+          key: true,
+          message: true,
+          messageTimestamp: true,
+        },
+      });
+
+      this.logger.verbose(`Found ${allPollUpdateMessages.length} pollUpdateMessage messages in database`);
+
+      // Filtrar apenas mensagens relacionadas a esta enquete específica
+      const pollUpdateMessages = allPollUpdateMessages.filter((msg) => {
+        const pollUpdate = (msg.message as any)?.pollUpdateMessage;
+        if (!pollUpdate) return false;
+
+        const creationKey = pollUpdate.pollCreationMessageKey;
+        if (!creationKey) return false;
+
+        return (
+          creationKey.id === pollCreationMessageKey.id &&
+          jidNormalizedUser(creationKey.remoteJid || '') === jidNormalizedUser(pollCreationMessageKey.remoteJid || '')
+        );
+      });
+
+      this.logger.verbose(`Filtered to ${pollUpdateMessages.length} matching poll update messages`);
+
+      // Preparar candidatos de JID para descriptografia
+      const creatorCandidates = [
+        this.instance.wuid,
+        this.client.user?.lid,
+        pollCreationMessage.key.participant,
+        (pollCreationMessage.key as any).participantAlt,
+        pollCreationMessage.key.remoteJid,
+        (pollCreationMessage.key as any).remoteJidAlt,
+      ].filter(Boolean);
+
+      const uniqueCreators = [...new Set(creatorCandidates.map((id) => jidNormalizedUser(id)))];
+
+      // Processar votos
+      const votesByUser = new Map<string, { timestamp: number; selectedOptions: string[]; voterJid: string }>();
+
+      this.logger.verbose(`Processing ${pollUpdateMessages.length} poll update messages for decryption`);
+
+      for (const pollUpdateMsg of pollUpdateMessages) {
+        const pollVote = (pollUpdateMsg.message as any)?.pollUpdateMessage?.vote;
+        if (!pollVote) continue;
+
+        const key = pollUpdateMsg.key as any;
+        const voterCandidates = [
+          this.instance.wuid,
+          this.client.user?.lid,
+          key.participant,
+          key.participantAlt,
+          key.remoteJidAlt,
+          key.remoteJid,
+        ].filter(Boolean);
+
+        const uniqueVoters = [...new Set(voterCandidates.map((id) => jidNormalizedUser(id)))];
+
+        let selectedOptionNames: string[] = [];
+        let successfulVoterJid: string | undefined;
+
+        // Verificar se o voto já está descriptografado
+        if (pollVote.selectedOptions && Array.isArray(pollVote.selectedOptions)) {
+          const selectedOptions = pollVote.selectedOptions;
+          this.logger.verbose('Vote already has selectedOptions, checking format');
+
+          // Verificar se são strings (já descriptografado) ou buffers (precisa descriptografar)
+          if (selectedOptions.length > 0 && typeof selectedOptions[0] === 'string') {
+            // Já está descriptografado como nomes de opções
+            selectedOptionNames = selectedOptions;
+            successfulVoterJid = uniqueVoters[0];
+            this.logger.verbose(`Using already decrypted vote: voter=${successfulVoterJid}, options=${selectedOptionNames.join(',')}`);
+          } else {
+            // Está como hash, precisa converter para nomes
+            selectedOptionNames = pollOptions
+              .filter((option: any) => {
+                const hash = createHash('sha256').update(option.optionName).digest();
+                return selectedOptions.some((selected: any) => {
+                  if (Buffer.isBuffer(selected)) {
+                    return Buffer.compare(selected, hash) === 0;
+                  }
+                  return false;
+                });
+              })
+              .map((option: any) => option.optionName);
+            successfulVoterJid = uniqueVoters[0];
+          }
+        } else if (pollVote.encPayload && pollEncKey) {
+          // Tentar descriptografar
+          let decryptedVote: any = null;
+
+          for (const creator of uniqueCreators) {
+            for (const voter of uniqueVoters) {
+              try {
+                decryptedVote = decryptPollVote(pollVote, {
+                  pollCreatorJid: creator,
+                  pollMsgId: pollCreationMessage.key.id,
+                  pollEncKey,
+                  voterJid: voter,
+                } as any);
+
+                if (decryptedVote) {
+                  successfulVoterJid = voter;
+                  break;
+                }
+              } catch (error) {
+                // Continue tentando outras combinações
+              }
+            }
+            if (decryptedVote) break;
+          }
+
+          if (decryptedVote && decryptedVote.selectedOptions) {
+            // Converter hashes para nomes de opções
+            selectedOptionNames = pollOptions
+              .filter((option: any) => {
+                const hash = createHash('sha256').update(option.optionName).digest();
+                return decryptedVote.selectedOptions.some((selected: any) => {
+                  if (Buffer.isBuffer(selected)) {
+                    return Buffer.compare(selected, hash) === 0;
+                  }
+                  return false;
+                });
+              })
+              .map((option: any) => option.optionName);
+
+            this.logger.verbose(`Successfully decrypted vote for voter: ${successfulVoterJid}, creator: ${uniqueCreators[0]}`);
+          } else {
+            this.logger.warn(`Failed to decrypt vote. Last error: Could not decrypt with any combination`);
+            continue;
+          }
+        } else {
+          this.logger.warn('Vote has no encPayload and no selectedOptions, skipping');
+          continue;
+        }
+
+        if (selectedOptionNames.length > 0 && successfulVoterJid) {
+          const normalizedVoterJid = jidNormalizedUser(successfulVoterJid);
+          const existingVote = votesByUser.get(normalizedVoterJid);
+
+          // Manter apenas o voto mais recente de cada usuário
+          if (!existingVote || pollUpdateMsg.messageTimestamp > existingVote.timestamp) {
+            votesByUser.set(normalizedVoterJid, {
+              timestamp: pollUpdateMsg.messageTimestamp,
+              selectedOptions: selectedOptionNames,
+              voterJid: successfulVoterJid,
+            });
+          }
+        }
+      }
+
+      // Agrupar votos por opção
+      const results: Record<string, { votes: number; voters: string[] }> = {};
+
+      // Inicializar todas as opções com zero votos
+      pollOptions.forEach((option: any) => {
+        results[option.optionName] = {
+          votes: 0,
+          voters: [],
+        };
+      });
+
+      // Agregar votos
+      votesByUser.forEach((voteData) => {
+        voteData.selectedOptions.forEach((optionName) => {
+          if (results[optionName]) {
+            results[optionName].votes++;
+            if (!results[optionName].voters.includes(voteData.voterJid)) {
+              results[optionName].voters.push(voteData.voterJid);
+            }
+          }
+        });
+      });
+
+      // Obter nome da enquete
+      const pollName =
+        (pollCreationMessage.message as any)?.pollCreationMessage?.name ||
+        (pollCreationMessage.message as any)?.pollCreationMessageV3?.name ||
+        'Enquete sem nome';
+
+      // Calcular total de votos únicos
+      const totalVotes = votesByUser.size;
+
+      return {
+        poll: {
+          name: pollName,
+          totalVotes,
+          results,
+        },
+      };
+    } catch (error) {
+      this.logger.error(`Error decrypting poll votes: ${error}`);
+      throw new InternalServerErrorException('Error decrypting poll votes', error.toString());
+    }
+  }
 }

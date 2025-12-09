@@ -447,3 +447,21 @@ export const buttonsMessageSchema: JSONSchema7 = {
   },
   required: ['number'],
 };
+
+export const decryptPollVoteSchema: JSONSchema7 = {
+  $id: v4(),
+  type: 'object',
+  properties: {
+    pollCreationMessageKey: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        remoteJid: { type: 'string' },
+        participant: { type: 'string' },
+        fromMe: { type: 'boolean' },
+      },
+      required: ['id', 'remoteJid'],
+    },
+  },
+  required: ['pollCreationMessageKey'],
+};
