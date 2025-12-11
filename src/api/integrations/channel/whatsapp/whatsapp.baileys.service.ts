@@ -733,7 +733,7 @@ export class BaileysStartupService extends ChannelStartupService {
       });
 
       return await this.createClient(number);
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new InternalServerErrorException(error?.toString());
     }
@@ -742,7 +742,7 @@ export class BaileysStartupService extends ChannelStartupService {
   public async reloadConnection(): Promise<WASocket> {
     try {
       return await this.createClient(this.phoneNumber);
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new InternalServerErrorException(error?.toString());
     }
@@ -888,7 +888,7 @@ export class BaileysStartupService extends ChannelStartupService {
             }),
           );
         }
-      } catch (error) {
+      } catch {
         console.error(error);
         this.logger.error(`Error: ${error.message}`);
       }
@@ -1074,7 +1074,7 @@ export class BaileysStartupService extends ChannelStartupService {
         contacts = undefined;
         messages = undefined;
         chats = undefined;
-      } catch (error) {
+      } catch {
         this.logger.error(error);
       }
     },
@@ -1434,7 +1434,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
                     await this.prismaRepository.message.update({ where: { id: msg.id }, data: messageRaw });
                   }
-                } catch (error) {
+                } catch {
                   this.logger.error(['Error on upload file to minio', error?.message, error?.stack]);
                 }
               }
@@ -1466,7 +1466,7 @@ export class BaileysStartupService extends ChannelStartupService {
                     messageRaw.message.base64 = buffer.toString('base64');
                   }
                 }
-              } catch (error) {
+              } catch {
                 this.logger.error(['Error converting media to base64', error?.message]);
               }
             }
@@ -1550,7 +1550,7 @@ export class BaileysStartupService extends ChannelStartupService {
               create: contactRaw,
             });
         }
-      } catch (error) {
+      } catch {
         this.logger.error(error);
       }
     },
@@ -1798,7 +1798,7 @@ export class BaileysStartupService extends ChannelStartupService {
         };
 
         this.sendDataWebhook(Events.GROUP_PARTICIPANTS_UPDATE, enhancedParticipantsUpdate);
-      } catch (error) {
+      } catch {
         this.logger.error(
           `Failed to resolve participant data for GROUP_PARTICIPANTS_UPDATE webhook: ${error.message} | Group: ${participantsUpdate.id} | Participants: ${participantsUpdate.participants.length}`,
         );
@@ -2005,7 +2005,7 @@ export class BaileysStartupService extends ChannelStartupService {
               return;
             }
           }
-        } catch (error) {
+        } catch {
           this.logger.error(error);
         }
       });
@@ -2122,7 +2122,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
       // return call;
       return { id: '123', jid, isVideo, callDuration };
-    } catch (error) {
+    } catch {
       return error;
     }
   }
@@ -2503,7 +2503,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
               await this.prismaRepository.message.update({ where: { id: msg.id }, data: messageRaw });
             }
-          } catch (error) {
+          } catch {
             this.logger.error(['Error on upload file to minio', error?.message, error?.stack]);
           }
         }
@@ -2534,7 +2534,7 @@ export class BaileysStartupService extends ChannelStartupService {
                 messageRaw.message.base64 = buffer.toString('base64');
               }
             }
-          } catch (error) {
+          } catch {
             this.logger.error(['Error converting media to base64', error?.message]);
           }
         }
@@ -2555,7 +2555,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return messageRaw;
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new BadRequestException(error.toString());
     }
@@ -2607,7 +2607,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return { presence: data.presence };
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new BadRequestException(error.toString());
     }
@@ -2619,7 +2619,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.sendPresenceUpdate(data.presence);
 
       return { presence: data.presence };
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new BadRequestException(error.toString());
     }
@@ -2860,7 +2860,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
           this.logger.verbose(`Video duration: ${duration} seconds`);
           prepareMedia[mediaType].seconds = duration;
-        } catch (error) {
+        } catch {
           this.logger.error('Error getting video duration:');
           this.logger.error(error);
           throw new Error(`Failed to get video duration: ${error.message}`);
@@ -2887,7 +2887,7 @@ export class BaileysStartupService extends ChannelStartupService {
         { [mediaType]: { ...prepareMedia[mediaType] } },
         { userJid: this.instance.wuid },
       );
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new InternalServerErrorException(error?.toString() || error);
     }
@@ -2932,7 +2932,7 @@ export class BaileysStartupService extends ChannelStartupService {
       } else {
         return await sharp(imageBuffer).webp().toBuffer();
       }
-    } catch (error) {
+    } catch {
       console.error('Erro ao converter a imagem para WebP:', error);
       throw error;
     }
@@ -3683,7 +3683,7 @@ export class BaileysStartupService extends ChannelStartupService {
       });
       await this.client.readMessages(keys);
       return { message: 'Read messages', read: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Read messages fail', error.toString());
     }
   }
@@ -3732,7 +3732,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.chatModify({ archive: data.archive, lastMessages: [last_message] }, createJid(number));
 
       return { chatId: number, archived: true };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException({
         archived: false,
         message: ['An error occurred while archiving the chat. Open a calling.', error.toString()],
@@ -3760,7 +3760,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.chatModify({ markRead: false, lastMessages: [last_message] }, createJid(number));
 
       return { chatId: number, markedChatUnread: true };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException({
         markedChatUnread: false,
         message: ['An error occurred while marked unread the chat. Open a calling.', error.toString()],
@@ -3817,7 +3817,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return response;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error while deleting message for everyone', error?.toString());
     }
   }
@@ -3955,7 +3955,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
             return result;
           }
-        } catch (error) {
+        } catch {
           this.logger.error('Error converting audio to mp4:');
           this.logger.error(error);
           throw new BadRequestException('Failed to convert audio to MP4');
@@ -3971,7 +3971,7 @@ export class BaileysStartupService extends ChannelStartupService {
         base64: buffer.toString('base64'),
         buffer: getBuffer ? buffer : null,
       };
-    } catch (error) {
+    } catch {
       this.logger.error('Error processing media message:');
       this.logger.error(error);
       throw new BadRequestException(error.toString());
@@ -4013,7 +4013,7 @@ export class BaileysStartupService extends ChannelStartupService {
           groupadd: settings.groupadd,
         },
       };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating privacy settings', error.toString());
     }
   }
@@ -4031,7 +4031,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return { isBusiness: true, ...profile };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating profile name', error.toString());
     }
   }
@@ -4041,7 +4041,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.updateProfileName(name);
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating profile name', error.toString());
     }
   }
@@ -4051,7 +4051,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.updateProfileStatus(status);
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating profile status', error.toString());
     }
   }
@@ -4092,7 +4092,7 @@ export class BaileysStartupService extends ChannelStartupService {
       this.reloadConnection();
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating profile picture', error.toString());
     }
   }
@@ -4104,7 +4104,7 @@ export class BaileysStartupService extends ChannelStartupService {
       this.reloadConnection();
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error removing profile picture', error.toString());
     }
   }
@@ -4124,7 +4124,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.updateBlockStatus(sender, data.status);
 
       return { block: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error blocking user', error.toString());
     }
   }
@@ -4150,7 +4150,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return null;
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new BadRequestException(error.toString());
     }
@@ -4238,7 +4238,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return messageSent;
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw error;
     }
@@ -4278,7 +4278,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
         return { numberJid: contact.jid, labelId: data.labelId, remove: true };
       }
-    } catch (error) {
+    } catch {
       throw new BadRequestException(`Unable to ${data.action} label to chat`, error.toString());
     }
   }
@@ -4296,7 +4296,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return meta;
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       return null;
     }
@@ -4344,7 +4344,7 @@ export class BaileysStartupService extends ChannelStartupService {
       const group = await this.client.groupMetadata(id);
 
       return group;
-    } catch (error) {
+    } catch {
       this.logger.error(error);
       throw new InternalServerErrorException('Error creating group', error.toString());
     }
@@ -4383,7 +4383,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.updateProfilePicture(picture.groupJid, pic);
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error update group picture', error.toString());
     }
   }
@@ -4393,7 +4393,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.groupUpdateSubject(data.groupJid, data.subject);
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating group subject', error.toString());
     }
   }
@@ -4403,7 +4403,7 @@ export class BaileysStartupService extends ChannelStartupService {
       await this.client.groupUpdateDescription(data.groupJid, data.description);
 
       return { update: 'success' };
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error updating group description', error.toString());
     }
   }
@@ -4437,7 +4437,7 @@ export class BaileysStartupService extends ChannelStartupService {
         isCommunityAnnounce: group.isCommunityAnnounce,
         linkedParent: group.linkedParent,
       };
-    } catch (error) {
+    } catch {
       if (reply === 'inner') {
         return;
       }
@@ -4484,7 +4484,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       const code = await this.client.groupInviteCode(id.groupJid);
       return { inviteUrl: `https://chat.whatsapp.com/${code}`, inviteCode: code };
-    } catch (error) {
+    } catch {
       throw new NotFoundException('No invite code', error.toString());
     }
   }
@@ -4524,7 +4524,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       const groupJid = await this.client.groupAcceptInvite(id.inviteCode);
       return { accepted: true, groupJid: groupJid };
-    } catch (error) {
+    } catch {
       throw new NotFoundException('Accept invite error', error.toString());
     }
   }
@@ -4533,7 +4533,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       const inviteCode = await this.client.groupRevokeInvite(id.groupJid);
       return { revoked: true, inviteCode };
-    } catch (error) {
+    } catch {
       throw new NotFoundException('Revoke error', error.toString());
     }
   }
@@ -4559,7 +4559,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return { participants: parsedParticipants };
-    } catch (error) {
+    } catch {
       console.error(error);
       throw new NotFoundException('No participants', error.toString());
     }
@@ -4574,7 +4574,7 @@ export class BaileysStartupService extends ChannelStartupService {
         update.action,
       );
       return { updateParticipants: updateParticipants };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Error updating participants', error.toString());
     }
   }
@@ -4583,7 +4583,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       const updateSetting = await this.client.groupSettingUpdate(update.groupJid, update.action);
       return { updateSetting: updateSetting };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Error updating setting', error.toString());
     }
   }
@@ -4592,7 +4592,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       await this.client.groupToggleEphemeral(update.groupJid, update.expiration);
       return { success: true };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Error updating setting', error.toString());
     }
   }
@@ -4601,7 +4601,7 @@ export class BaileysStartupService extends ChannelStartupService {
     try {
       await this.client.groupLeave(id.groupJid);
       return { groupJid: id.groupJid, leave: true };
-    } catch (error) {
+    } catch {
       throw new BadRequestException('Unable to leave the group', error.toString());
     }
   }
@@ -4885,7 +4885,7 @@ export class BaileysStartupService extends ChannelStartupService {
       const response = await this.client.signalRepository.decryptMessage({ jid, type, ciphertext: ciphertextBuffer });
 
       return response instanceof Uint8Array ? Buffer.from(response).toString('base64') : response;
-    } catch (error) {
+    } catch {
       this.logger.error('Error decrypting message:');
       this.logger.error(error);
       throw error;
@@ -4943,7 +4943,7 @@ export class BaileysStartupService extends ChannelStartupService {
         catalogLength: productsCatalog.length,
         catalog: productsCatalog,
       };
-    } catch (error) {
+    } catch {
       console.log(error);
       return { wuid: jid, name: null, isBusiness: false };
     }
@@ -4964,7 +4964,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return catalog;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error getCatalog', error.toString());
     }
   }
@@ -5008,7 +5008,7 @@ export class BaileysStartupService extends ChannelStartupService {
       }
 
       return result.collections;
-    } catch (error) {
+    } catch {
       throw new InternalServerErrorException('Error getCatalog', error.toString());
     }
   }
@@ -5238,7 +5238,9 @@ export class BaileysStartupService extends ChannelStartupService {
             // Já está descriptografado como nomes de opções
             selectedOptionNames = selectedOptions;
             successfulVoterJid = uniqueVoters[0];
-            this.logger.verbose(`Using already decrypted vote: voter=${successfulVoterJid}, options=${selectedOptionNames.join(',')}`);
+            this.logger.verbose(
+              `Using already decrypted vote: voter=${successfulVoterJid}, options=${selectedOptionNames.join(',')}`,
+            );
           } else {
             // Está como hash, precisa converter para nomes
             selectedOptionNames = pollOptions
@@ -5272,7 +5274,7 @@ export class BaileysStartupService extends ChannelStartupService {
                   successfulVoterJid = voter;
                   break;
                 }
-              } catch (error) {
+              } catch {
                 // Continue tentando outras combinações
               }
             }
@@ -5293,7 +5295,9 @@ export class BaileysStartupService extends ChannelStartupService {
               })
               .map((option: any) => option.optionName);
 
-            this.logger.verbose(`Successfully decrypted vote for voter: ${successfulVoterJid}, creator: ${uniqueCreators[0]}`);
+            this.logger.verbose(
+              `Successfully decrypted vote for voter: ${successfulVoterJid}, creator: ${uniqueCreators[0]}`,
+            );
           } else {
             this.logger.warn(`Failed to decrypt vote. Last error: Could not decrypt with any combination`);
             continue;
@@ -5357,7 +5361,7 @@ export class BaileysStartupService extends ChannelStartupService {
           results,
         },
       };
-    } catch (error) {
+    } catch {
       this.logger.error(`Error decrypting poll votes: ${error}`);
       throw new InternalServerErrorException('Error decrypting poll votes', error.toString());
     }
