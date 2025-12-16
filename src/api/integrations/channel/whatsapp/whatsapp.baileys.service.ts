@@ -1201,10 +1201,10 @@ export class BaileysStartupService extends ChannelStartupService {
             }
           }
 
-          const messageRaw = this.prepareMessage(received);
+          const messageRaw = this.prepareMessage(received) as any;
 
           if (messageRaw.messageType === 'pollUpdateMessage') {
-            const pollCreationKey = messageRaw.message.pollUpdateMessage.pollCreationMessageKey;
+            const pollCreationKey = (messageRaw.message as any).pollUpdateMessage.pollCreationMessageKey;
             const pollMessage = (await this.getMessage(pollCreationKey, true)) as proto.IWebMessageInfo;
             const pollMessageSecret = (await this.getMessage(pollCreationKey)) as any;
 
@@ -1213,7 +1213,7 @@ export class BaileysStartupService extends ChannelStartupService {
                 (pollMessage.message as any).pollCreationMessage?.options ||
                 (pollMessage.message as any).pollCreationMessageV3?.options ||
                 [];
-              const pollVote = messageRaw.message.pollUpdateMessage.vote;
+              const pollVote = (messageRaw.message as any).pollUpdateMessage.vote;
 
               const voterJid = received.key.fromMe
                 ? this.instance.wuid
@@ -1293,14 +1293,14 @@ export class BaileysStartupService extends ChannelStartupService {
                 })
                 .map((option) => option.optionName);
 
-              messageRaw.message.pollUpdateMessage.vote.selectedOptions = selectedOptionNames;
+              (messageRaw.message as any).pollUpdateMessage.vote.selectedOptions = selectedOptionNames;
 
               const pollUpdates = pollOptions.map((option) => ({
                 name: option.optionName,
                 voters: selectedOptionNames.includes(option.optionName) ? [successfulVoterJid] : [],
               }));
 
-              messageRaw.pollUpdates = pollUpdates;
+              (messageRaw as any).pollUpdates = pollUpdates;
             }
           }
 
@@ -1348,13 +1348,14 @@ export class BaileysStartupService extends ChannelStartupService {
             });
 
             if (openAiDefaultSettings && openAiDefaultSettings.openaiCredsId && openAiDefaultSettings.speechToText) {
-              messageRaw.message.speechToText = `[audio] ${await this.openaiService.speechToText(received, this)}`;
+              (messageRaw.message as any).speechToText =
+                `[audio] ${await this.openaiService.speechToText(received, this)}`;
             }
           }
 
           if (this.configService.get<Database>('DATABASE').SAVE_DATA.NEW_MESSAGE) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { pollUpdates, ...messageData } = messageRaw;
+            const { pollUpdates, ...messageData } = messageRaw as any;
             const msg = await this.prismaRepository.message.create({ data: messageData });
 
             const { remoteJid } = received.key;
@@ -1430,7 +1431,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
                     const mediaUrl = await s3Service.getObjectUrl(fullName);
 
-                    messageRaw.message.mediaUrl = mediaUrl;
+                    (messageRaw.message as any).mediaUrl = mediaUrl;
 
                     await this.prismaRepository.message.update({ where: { id: msg.id }, data: messageRaw });
                   }
@@ -1452,7 +1453,7 @@ export class BaileysStartupService extends ChannelStartupService {
                 );
 
                 if (buffer) {
-                  messageRaw.message.base64 = buffer.toString('base64');
+                  (messageRaw.message as any).base64 = buffer.toString('base64');
                 } else {
                   // retry to download media
                   const buffer = await downloadMediaMessage(
@@ -1463,7 +1464,7 @@ export class BaileysStartupService extends ChannelStartupService {
                   );
 
                   if (buffer) {
-                    messageRaw.message.base64 = buffer.toString('base64');
+                    (messageRaw.message as any).base64 = buffer.toString('base64');
                   }
                 }
               } catch (error) {
@@ -1475,8 +1476,8 @@ export class BaileysStartupService extends ChannelStartupService {
           this.logger.verbose(messageRaw);
 
           sendTelemetry(`received.message.${messageRaw.messageType ?? 'unknown'}`);
-          if (messageRaw.key.remoteJid?.includes('@lid') && messageRaw.key.remoteJidAlt) {
-            messageRaw.key.remoteJid = messageRaw.key.remoteJidAlt;
+          if ((messageRaw.key as any).remoteJid?.includes('@lid') && (messageRaw.key as any).remoteJidAlt) {
+            (messageRaw.key as any).remoteJid = (messageRaw.key as any).remoteJidAlt;
           }
           console.log(messageRaw);
 
@@ -1484,7 +1485,7 @@ export class BaileysStartupService extends ChannelStartupService {
 
           await chatbotController.emit({
             instance: { instanceName: this.instance.name, instanceId: this.instanceId },
-            remoteJid: messageRaw.key.remoteJid,
+            remoteJid: (messageRaw.key as any).remoteJid,
             msg: messageRaw,
             pushName: messageRaw.pushName,
           });
@@ -1513,9 +1514,11 @@ export class BaileysStartupService extends ChannelStartupService {
             await saveOnWhatsappCache([
               {
                 remoteJid:
-                  messageRaw.key.addressingMode === 'lid' ? messageRaw.key.remoteJidAlt : messageRaw.key.remoteJid,
-                remoteJidAlt: messageRaw.key.remoteJidAlt,
-                lid: messageRaw.key.addressingMode === 'lid' ? 'lid' : null,
+                  (messageRaw.key as any).addressingMode === 'lid'
+                    ? (messageRaw.key as any).remoteJidAlt
+                    : (messageRaw.key as any).remoteJid,
+                remoteJidAlt: (messageRaw.key as any).remoteJidAlt,
+                lid: (messageRaw.key as any).addressingMode === 'lid' ? 'lid' : null,
               },
             ]);
           }
@@ -1561,7 +1564,11 @@ export class BaileysStartupService extends ChannelStartupService {
       const readChatToUpdate: Record<string, true> = {}; // {remoteJid: true}
 
       for await (const { key, update } of args) {
-        if (settings?.groupsIgnore && key.remoteJid?.includes('@g.us')) {
+        const keyAny = key as any;
+        const normalizedRemoteJid = keyAny.remoteJid?.replace(/:.*$/, '');
+        const normalizedParticipant = keyAny.participant?.replace(/:.*$/, '');
+
+        if (settings?.groupsIgnore && normalizedRemoteJid?.includes('@g.us')) {
           continue;
         }
 
@@ -1612,9 +1619,9 @@ export class BaileysStartupService extends ChannelStartupService {
 
           const message: any = {
             keyId: key.id,
-            remoteJid: key?.remoteJid,
+            remoteJid: normalizedRemoteJid,
             fromMe: key.fromMe,
-            participant: key?.participant,
+            participant: normalizedParticipant,
             status: status[update.status] ?? 'SERVER_ACK',
             pollUpdates,
             instanceId: this.instanceId,
@@ -2422,7 +2429,7 @@ export class BaileysStartupService extends ChannelStartupService {
         messageSent.messageTimestamp = messageSent.messageTimestamp?.toNumber();
       }
 
-      const messageRaw = this.prepareMessage(messageSent);
+      const messageRaw = this.prepareMessage(messageSent) as any;
 
       const isMedia =
         messageSent?.message?.imageMessage ||
@@ -2444,14 +2451,15 @@ export class BaileysStartupService extends ChannelStartupService {
         );
       }
 
-      if (this.configService.get<Openai>('OPENAI').ENABLED && messageRaw?.message?.audioMessage) {
+      if (this.configService.get<Openai>('OPENAI').ENABLED && (messageRaw as any)?.message?.audioMessage) {
         const openAiDefaultSettings = await this.prismaRepository.openaiSetting.findFirst({
           where: { instanceId: this.instanceId },
           include: { OpenaiCreds: true },
         });
 
         if (openAiDefaultSettings && openAiDefaultSettings.openaiCredsId && openAiDefaultSettings.speechToText) {
-          messageRaw.message.speechToText = `[audio] ${await this.openaiService.speechToText(messageRaw, this)}`;
+          (messageRaw.message as any).speechToText =
+            `[audio] ${await this.openaiService.speechToText(messageRaw, this)}`;
         }
       }
 
@@ -4662,26 +4670,28 @@ export class BaileysStartupService extends ChannelStartupService {
     return obj;
   }
 
-  private prepareMessage(message: proto.IWebMessageInfo): any {
-    const contentType = getContentType(message.message);
-    const contentMsg = message?.message[contentType] as any;
-
-    const messageRaw = {
-      key: message.key, // Save key exactly as it comes from Baileys
+  private prepareMessage(message: WAMessage): Message {
+    const keyAny = message.key as any;
+    const messageRaw: any = {
+      key: {
+        ...message.key,
+        remoteJid: keyAny.remoteJid?.replace(/:.*$/, ''),
+        participant: keyAny.participant?.replace(/:.*$/, ''),
+      },
       pushName:
         message.pushName ||
         (message.key.fromMe
           ? 'Você'
           : message?.participant || (message.key?.participant ? message.key.participant.split('@')[0] : null)),
-      status: status[message.status],
       message: this.deserializeMessageBuffers({ ...message.message }),
-      contextInfo: this.deserializeMessageBuffers(contentMsg?.contextInfo),
-      messageType: contentType || 'unknown',
+      messageType: getContentType(message.message),
       messageTimestamp: Long.isLong(message.messageTimestamp)
         ? message.messageTimestamp.toNumber()
         : (message.messageTimestamp as number),
+      source: getDevice(keyAny.id),
       instanceId: this.instanceId,
-      source: getDevice(message.key.id),
+      status: status[message.status],
+      contextInfo: this.deserializeMessageBuffers(message.message?.messageContextInfo),
     };
 
     if (!messageRaw.status && message.key.fromMe === false) {
