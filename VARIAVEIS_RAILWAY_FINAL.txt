@@ -1,0 +1,154 @@
+# ===========================================
+# VARIÁVEIS FINAIS PARA RAILWAY - CORRIGIDAS
+# ===========================================
+# IMPORTANTE: Configure DATABASE_URL também!
+# O script de deploy precisa de DATABASE_URL
+
+# ===========================================
+# SERVIDOR (OBRIGATÓRIO)
+# ===========================================
+SERVER_NAME=evolution
+SERVER_TYPE=http
+SERVER_PORT=8080
+SERVER_URL=https://evolution-api-production-2b06.up.railway.app
+SERVER_DISABLE_DOCS=false
+SERVER_DISABLE_MANAGER=false
+
+# ===========================================
+# BANCO DE DADOS (OBRIGATÓRIO) - CRÍTICO!
+# ===========================================
+DATABASE_PROVIDER=postgresql
+
+# IMPORTANTE: Configure apenas DATABASE_CONNECTION_URI
+# O script de deploy mapeia automaticamente para DATABASE_URL
+DATABASE_CONNECTION_URI=postgresql://postgres.yvyugaixtlctuwtnnlks:9TRZd8ue$$acE9MC@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+DATABASE_CONNECTION_CLIENT_NAME=evolution
+
+# Configurações de salvamento
+DATABASE_SAVE_DATA_INSTANCE=true
+DATABASE_SAVE_DATA_NEW_MESSAGE=true
+DATABASE_SAVE_MESSAGE_UPDATE=true
+DATABASE_SAVE_DATA_CONTACTS=true
+DATABASE_SAVE_DATA_CHATS=true
+DATABASE_SAVE_DATA_HISTORIC=true
+DATABASE_SAVE_DATA_LABELS=true
+DATABASE_SAVE_IS_ON_WHATSAPP=true
+DATABASE_SAVE_IS_ON_WHATSAPP_DAYS=7
+DATABASE_DELETE_MESSAGE=false
+
+# ===========================================
+# AUTENTICAÇÃO (OBRIGATÓRIO)
+# ===========================================
+AUTHENTICATION_API_KEY=9TRZd8ue$$acE9MC
+AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=false
+
+# ===========================================
+# CACHE (IMPORTANTE)
+# ===========================================
+# Cache Local (funciona sem Redis)
+CACHE_LOCAL_ENABLED=true
+CACHE_LOCAL_TTL=86400
+
+# Redis (desabilitado se não tiver)
+CACHE_REDIS_ENABLED=false
+CACHE_REDIS_URI=
+CACHE_REDIS_PREFIX_KEY=evolution-cache
+CACHE_REDIS_TTL=604800
+CACHE_REDIS_SAVE_INSTANCES=true
+
+# ===========================================
+# CORS (IMPORTANTE)
+# ===========================================
+CORS_ORIGIN=*
+CORS_METHODS=POST,GET,PUT,DELETE
+CORS_CREDENTIALS=true
+
+# ===========================================
+# LOGS
+# ===========================================
+LOG_LEVEL=ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,DARK,WEBHOOKS,WEBSOCKET
+LOG_COLOR=true
+LOG_BAILEYS=error
+
+# ===========================================
+# IDIOMA
+# ===========================================
+LANGUAGE=pt-BR
+
+# ===========================================
+# INSTÂNCIAS
+# ===========================================
+DEL_INSTANCE=false
+DEL_TEMP_INSTANCES=true
+
+# ===========================================
+# WEBSOCKET
+# ===========================================
+WEBSOCKET_ENABLED=true
+WEBSOCKET_GLOBAL_EVENTS=true
+WEBSOCKET_ALLOWED_HOSTS=
+
+# ===========================================
+# CONFIGURAÇÕES DE SESSÃO
+# ===========================================
+CONFIG_SESSION_PHONE_CLIENT=Evolution API
+CONFIG_SESSION_PHONE_NAME=Chrome
+
+# ===========================================
+# QR CODE
+# ===========================================
+QRCODE_LIMIT=30
+QRCODE_COLOR=#198754
+
+# ===========================================
+# WHATSAPP BUSINESS
+# ===========================================
+WA_BUSINESS_TOKEN_WEBHOOK=evolution
+WA_BUSINESS_URL=https://graph.facebook.com
+WA_BUSINESS_VERSION=v18.0
+WA_BUSINESS_LANGUAGE=en
+
+# ===========================================
+# WEBHOOK (OPCIONAL)
+# ===========================================
+WEBHOOK_GLOBAL_URL=
+WEBHOOK_GLOBAL_ENABLED=false
+WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
+
+# ===========================================
+# TELEMETRIA
+# ===========================================
+TELEMETRY_ENABLED=true
+TELEMETRY_URL=
+
+# ===========================================
+# EVENT EMITTER
+# ===========================================
+EVENT_EMITTER_MAX_LISTENERS=50
+
+# ===========================================
+# INTEGRAÇÕES (OPCIONAL)
+# ===========================================
+TYPEBOT_ENABLED=false
+CHATWOOT_ENABLED=false
+OPENAI_ENABLED=false
+DIFY_ENABLED=false
+N8N_ENABLED=false
+EVOAI_ENABLED=false
+FLOWISE_ENABLED=false
+
+# ===========================================
+# S3 / MINIO (OPCIONAL)
+# ===========================================
+S3_ENABLED=false
+
+# ===========================================
+# RABBITMQ, NATS, SQS, KAFKA, PUSHER (OPCIONAL)
+# ===========================================
+RABBITMQ_ENABLED=false
+NATS_ENABLED=false
+SQS_ENABLED=false
+KAFKA_ENABLED=false
+PUSHER_ENABLED=false
+
