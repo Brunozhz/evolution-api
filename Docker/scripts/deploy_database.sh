@@ -11,7 +11,12 @@ if [[ "$DATABASE_PROVIDER" == "postgresql" || "$DATABASE_PROVIDER" == "mysql" ||
     if [ -z "$DATABASE_URL" ] && [ -n "$DATABASE_CONNECTION_URI" ]; then
         export DATABASE_URL="$DATABASE_CONNECTION_URI"
     fi
+    # Ensure DATABASE_CONNECTION_URI is available for Prisma schema
+    if [ -z "$DATABASE_CONNECTION_URI" ] && [ -n "$DATABASE_URL" ]; then
+        export DATABASE_CONNECTION_URI="$DATABASE_URL"
+    fi
     export DATABASE_URL
+    export DATABASE_CONNECTION_URI
     echo "Deploying migrations for $DATABASE_PROVIDER"
     echo "Database URL: $DATABASE_URL"
     # rm -rf ./prisma/migrations

@@ -4,6 +4,16 @@ const { existsSync } = require('fs');
 
 dotenv.config();
 
+// Ensure DATABASE_CONNECTION_URI is available for Prisma
+// Map DATABASE_URL to DATABASE_CONNECTION_URI if needed
+if (!process.env.DATABASE_CONNECTION_URI && process.env.DATABASE_URL) {
+  process.env.DATABASE_CONNECTION_URI = process.env.DATABASE_URL;
+}
+// Map DATABASE_CONNECTION_URI to DATABASE_URL if needed
+if (!process.env.DATABASE_URL && process.env.DATABASE_CONNECTION_URI) {
+  process.env.DATABASE_URL = process.env.DATABASE_CONNECTION_URI;
+}
+
 const { DATABASE_PROVIDER } = process.env;
 const databaseProviderDefault = DATABASE_PROVIDER ?? 'postgresql';
 
@@ -45,7 +55,15 @@ if (command.includes('rmdir') && existsSync('prisma\\migrations')) {
 }
 
 try {
-  execSync(command, { stdio: 'inherit' });
+  // Pass environment variables to the command
+  execSync(command, { 
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      DATABASE_CONNECTION_URI: process.env.DATABASE_CONNECTION_URI || process.env.DATABASE_URL,
+      DATABASE_URL: process.env.DATABASE_URL || process.env.DATABASE_CONNECTION_URI,
+    }
+  });
 } catch (error) {
   console.error(`Error executing command: ${command}`);
   process.exit(1);
