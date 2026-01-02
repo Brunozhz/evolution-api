@@ -1,0 +1,62 @@
+# ===========================================
+# CONNECTION STRING CORRETA PARA RAILWAY
+# ===========================================
+
+# COPIE E COLE EXATAMENTE ISSO NO RAILWAY:
+
+DATABASE_CONNECTION_URI=postgresql://postgres:9TRZd8ue$$acE9MC@db.yvyugaixtlctuwtnnlks.supabase.co:5432/postgres
+
+# ===========================================
+# EXPLICAÇÃO
+# ===========================================
+
+# ❌ NÃO USE (Connection Pooling - porta 6543):
+# postgresql://postgres.yvyugaixtlctuwtnnlks:9TRZd8ue$$acE9MC@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+# ✅ USE (Direct Connection - porta 5432):
+# postgresql://postgres:9TRZd8ue$$acE9MC@db.yvyugaixtlctuwtnnlks.supabase.co:5432/postgres
+
+# ===========================================
+# DIFERENÇAS IMPORTANTES
+# ===========================================
+
+# Connection Pooling (6543):
+# - Host: aws-0-us-east-1.pooler.supabase.com
+# - Porta: 6543
+# - Username: postgres.yvyugaixtlctuwtnnlks
+# - Uso: Runtime da aplicação
+# - Suporta: SELECT, INSERT, UPDATE, DELETE
+# - NÃO suporta: Migrations, CREATE TABLE, ALTER TABLE
+
+# Direct Connection (5432):
+# - Host: db.yvyugaixtlctuwtnnlks.supabase.co
+# - Porta: 5432
+# - Username: postgres
+# - Uso: Migrations, Admin, CLI
+# - Suporta: TODAS as operações
+
+# ===========================================
+# COMO ENCONTRAR NO SUPABASE
+# ===========================================
+
+# 1. Acesse: https://supabase.com/dashboard/project/yvyugaixtlctuwtnnlks
+# 2. Settings > Database
+# 3. Connection string
+# 4. Selecione "Direct connection"
+# 5. Copie a string
+# 6. Substitua [YOUR-PASSWORD] por: 9TRZd8ue$$acE9MC
+#    IMPORTANTE: Use $$ (dois cifrões) no Railway!
+
+# ===========================================
+# NO RAILWAY
+# ===========================================
+
+# 1. Variables
+# 2. Encontre DATABASE_CONNECTION_URI
+# 3. DELETE a variável atual
+# 4. + New Variable
+# 5. Nome: DATABASE_CONNECTION_URI
+# 6. Valor: postgresql://postgres:9TRZd8ue$$acE9MC@db.yvyugaixtlctuwtnnlks.supabase.co:5432/postgres
+# 7. Salve
+# 8. Deployments > Redeploy
+
